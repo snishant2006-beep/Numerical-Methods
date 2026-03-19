@@ -9,89 +9,103 @@ Original file is located at
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+plt.style.use('seaborn-v0_8-darkgrid')
 def solvelaplace(init_psi, alpha, N):
-  psi_current = np.zeros((7,7))
-  psi_bar = np.zeros((7,7))
-  psi_next = np.zeros((7,7))
-  psi_next[:,:] = init_psi
-  rows,cols = init_psi.shape
-  delta_x = 1/(cols-1)
-  delta_y= 1/(rows-1)
-  inv_delta_xs = (1/delta_x)**2
-  inv_delta_ys = (1/delta_y)**2
-  hist_values = np.zeros((N,3))
-  psi_current[:,:]=init_psi
-  for k in range(0,N):
-    hist_values[k,0], hist_values[k,1], hist_values[k,2] = psi_current[1,1], psi_current[3,3], psi_current[5,5]
-    for i in range(1,rows-1):
-      for j in range(1,cols-1):
-        psi_bar[i,j]=((psi_current[i+1,j]+psi_current[i-1,j])*inv_delta_xs + (psi_current[i,j+1]+psi_current[i,j-1])*inv_delta_ys)/(2*(inv_delta_ys+inv_delta_xs))
-        psi_next[i,j] = (1-float(alpha))*psi_current[i,j] + float(alpha)*psi_bar[i,j]
-        psi_current[:,:] = psi_next
-  return psi_next, hist_values
+#This function solves the Laplace’s equation using the over−relaxation method
+#Input:
+#init_psi: 2D matrix containing the initial \psi, including boundaries.
+#alpha: the coefficient of over−relaxation.
+#N_iter: maximum number of iterations performed.
 
-initial_grid = np.zeros((7, 7))
-initial_grid[0,:] = 1
-initial_grid[:,0] = 1
-initial_grid[-1,:] = 1
-initial_grid[:,-1] = 1
-solvelaplace(initial_grid,1.35,30)
+#Output:
+#psi: 2D matrix of the value of \psi after (up to) N_iter iterations.
+#hist_values: (N_iter x 3) matrix that contains historical values of 3 points during
+#the iteration (1 in the upper half, 1 in the middle, and 1 in the lower half).
 
-import numpy as np
+#Constraints:
+#The boundaries of psi are kept constant during the iterations.
 
-def solvelaplace(init_psi, alpha, N):
-  #set initial values for matrices psi_current which is psi_m, psi_m+1 which is psi_next and psi_bar
-  psi_current = np.zeros((7,7))
-  psi_bar = np.zeros((7,7))
-  psi_next = np.zeros((7,7))
-  #preset the boundary values of the m+1 matrix as I will only be iterating within the matrix not including boundaries
-  psi_next[:,:] = init_psi
+  #set initial values for psi_bar and psi_current which is psi_m
+  rows, cols = init_psi.shape
+  psi_current = np.zeros((rows, cols))
+  psi_bar = np.zeros((rows, cols))
+  #preset the boundary values of the psi_m matrix as I will only be iterating within the matrix not including boundaries
+  psi_current[:,:] = init_psi
   #set all variables relating to delta_x and y
-  rows,cols = init_psi.shape
   delta_x = 1/(cols-1)
   delta_y= 1/(rows-1)
   inv_delta_xs = (1/delta_x)**2
   inv_delta_ys = (1/delta_y)**2
   hist_values = np.zeros((N,3))
-  #also preset the initial matrix to match the inputted matrix
-  psi_current[:,:]=init_psi
-  #loop over the index m which is k in my case adding historical values of [1,1], [3,3], [5,5] which are actually [2,2], [4,4] and [6,6] respectively but numpy starts arrays at [0,0]
+  #loop over the index m which is k in my case adding historical values of [1,1], [3,3], [5,5] it is important to note numpy starts arrays at [0,0]
   for k in range(0,N):
     hist_values[k,0], hist_values[k,1], hist_values[k,2] = psi_current[1,1], psi_current[3,3], psi_current[5,5]
   #for each iteration of m modify the entire matrix by looping over i and j
     for i in range(1,rows-1):
       for j in range(1,cols-1):
         psi_bar[i,j]=((psi_current[i+1,j]+psi_current[i-1,j])*inv_delta_xs + (psi_current[i,j+1]+psi_current[i,j-1])*inv_delta_ys)/(2*(inv_delta_ys+inv_delta_xs))
-        psi_next[i,j] = (1-float(alpha))*psi_current[i,j] + float(alpha)*psi_bar[i,j]
-  #for the next loop set psi m to m+1
-        psi_current[:,:] = psi_next
-  return psi_next, hist_values
-#set the initial grid with 0s on the left side and bottom as if it were mimicking the x and y axes if i were to leave increasing x and y with increasing i and j, the y = 0 outputs would be the top row as i = 0 is the top row
-second_grid = np.zeros((7,7))
-rowsl,colsl = second_grid.shape
+        psi_current[i,j] = (1-float(alpha))*psi_current[i,j] + float(alpha)*psi_bar[i,j]
+
+  return psi_current, hist_values
+#set the initial grid with 0s on the left side and top as if it were mimicking the x and y axes if i were to leave increasing x and y with increasing i and j,
+#the y = 0 outputs would be the top row as i = 0 is the top row
+initial_grid = np.zeros((7,7))
+rowsl,colsl = initial_grid.shape
 delta_x = 1/(colsl-1)
 delta_y= 1/(rowsl-1)
-second_grid[-1,:] = 0
-second_grid[:,0] = 0
 for j in range(1,7):
-  second_grid[0,j] = np.sinh(1)*np.sin(j*delta_x)
+  initial_grid[-1,j] = np.sinh(1)*np.sin(j*delta_x)
 for p in range(0,6):
-  second_grid[p,-1] = np.sinh(1-p*delta_y)*np.sin(1)
-psi_final, conv_values = solvelaplace(second_grid, 1.35, 30)
+  initial_grid[p,-1] = np.sinh(p*delta_y)*np.sin(1)
+
 def plot_convergence(N, hist_values):
   x = np.linspace(0,N,N)
   y,z,a = hist_values[:,0],hist_values[:,1], hist_values[:,2]
-  plt.plot(x,y)
-  plt.plot(x,z)
-  plt.plot(x,a)
-plot_convergence(30, conv_values)
-print(psi_final)
+  plt.plot(x,y, label = '(1,1)')
+  plt.plot(x,z, label = '(3,3)')
+  plt.plot(x,a, label = '(5,5)')
+  plt.legend()
+
+
 def contour_plot(final_matrix):
   x = np.arange(0, final_matrix.shape[1]) * delta_x
   y = np.arange(0, final_matrix.shape[0]) * delta_y
   X,Y = np.meshgrid(x,y)
-  Z = np.flipud(final_matrix)
+  Z = final_matrix
   plt.figure()
-  plt.contour(X,Y,Z, levels=200, cmap='viridis')
-contour_plot(psi_final)
+  #name contour plot to put in a colourbar
+  cp = plt.contour(X,Y,Z, levels=200, cmap='viridis')
+  plt.colorbar(cp, label='ψ')
+
+expected_solution_grid = np.zeros((7,7))
+for l in range(0,7):
+  for z in range(0,7):
+    expected_solution_grid[l,z] = np.sinh(l*delta_y)*np.sin(z*delta_x)
+contour_plot(expected_solution_grid)
+plt.title('Expected Solution')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.tight_layout()
+plt.show()
+
+alphas = [1.1, 1.25, 1.45, 2.1]
+N = 30
+#loop over the alphas for more concise code
+for alpha in alphas:
+    psi_final, hist = solvelaplace(initial_grid, alpha, N)
+    fig = plt.figure(figsize=(6,3.5))
+    ax = fig.gca()         # make this axes active
+    plt.sca(ax)            # set current axes
+    plot_convergence(N, hist)
+    plt.title(f'Historical Values — alpha = {alpha}')
+    plt.xlabel('Iteration')
+    plt.ylabel(r'$\psi$')
+    plt.tight_layout()
+    plt.show()
+
+    contour_plot(psi_final)
+    plt.title(f'Final field — alpha = {alpha}')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.tight_layout()
+    plt.show()
