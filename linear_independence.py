@@ -10,7 +10,7 @@ Original file is located at
 import numpy as np
 
 def compute_linear_independence(A):
-  #This function computes the Singular Value Decomposition of a matrix A and uses it to compute linear independence. This is a faster method than using determinant.
+  #This function computes the Singular Value Decomposition of a matrix A and uses it to compute linear independence. This is a faster method than using determinant and more numerically stable as the small rounding errors in determinants scale worse.
   #
   #Input:
   #A: (n x n) matrix with n vectors in columns that we want to test the independence of
