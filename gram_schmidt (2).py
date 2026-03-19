@@ -16,10 +16,10 @@ from numpy.polynomial import Polynomial
 from numpy.polynomial.hermite import hermgauss
 
 def _print_poly(indices, coefs):
-    """Prints p_{indices}(x) in a readable form, skipping near-zero terms."""
+    #Prints p_{indices}(x) in a readable form, skipping near-zero terms. I've put this beforehand as the actual function requires it to output a clean result
     terms = []
     for j, c in enumerate(coefs):
-        # skip coefficients that are just floating point noise
+        # skip coefficients that are just noise from rounding in these calcs
         if abs(c) < 1e-12:
             continue
         # format each term differently depending on the power j
@@ -62,12 +62,13 @@ def generate_orthonormal_polynomials(n_max):
     polys = []
 
     for k in range(n_max + 1):
-        # start from monomial x^k
+        # make an array of dimensions n_max + 1 range ignores the final value and loop such that we find the kth polynomial associated with the x^kth monomial. 
         coef = np.zeros(k + 1)
         coef[k] = 1.0
+        #this gives x^kth monomial as coefficients is [0,0,1.0,...] where the 1 is on the kth index of the list 
         v = Polynomial(coef)
 
-        # subtract off components along previously found basis vectors
+        # subtract off components along previously found basis vectors and normalise
         for pj in polys:
             v = v - pj * inner_prod(v, pj)
 
